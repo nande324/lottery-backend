@@ -1,0 +1,86 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.lottery.mapper.DrawTicketMapper">
+
+    <!--
+        综合统计概览查询
+        时间过滤：投入按 bet_time，中奖按 draw_time（无 draw_time 则回退 bet_time）
+        返回：totalCost、totalWin、totalTickets、winTickets
+    -->
+    <select id="getOverviewStats" resultType="java.util.Map">
+        SELECT
+            COALESCE(SUM(bet_amount), 0)  AS totalCost,
+            COALESCE(SUM(CASE WHEN win_status = 'WIN' THEN win_amount ELSE 0 END), 0) AS totalWin,
+            COUNT(*)                       AS totalTickets,
+            SUM(CASE WHEN win_status = 'WIN' THEN 1 ELSE 0 END) AS winTickets
+        FROM t_draw_ticket
+        WHERE user_id = #{userId}
+          AND deleted = 0
+          <if test="modeId != null">
+              AND mode_id = #{modeId}
+          </if>
+          <if test="startDate != null">
+              AND DATE(COALESCE(draw_time, bet_time)) &gt;= #{startDate}
+          </if>
+          <if test="endDate != null">
+              AND DATE(COALESCE(draw_time, bet_time)) &lt;= #{endDate}
+          </if>
+    </select>
+
+    <!--
+        趋势统计查询（按日/月/年分组）
+        分组时间：COALESCE(draw_time, bet_time)，中奖金额归属到开奖时间
+        groupBy 参数：DAY → %Y-%m-%d，MONTH → %Y-%m，YEAR → %Y
+        返回：period（时间段标签）、cost（投入金额）、win（中奖金额）
+    -->
+    <select id="getTrendStats" resultType="java.util.Map">
+        SELECT
+            DATE_FORMAT(COALESCE(draw_time, bet_time),
+                <choose>
+                    <when test="groupBy == 'DAY'">   '%Y-%m-%d' </when>
+                    <when test="groupBy == 'YEAR'">  '%Y'       </when>
+                    <otherwise>                      '%Y-%m'    </otherwise>
+                </choose>
+            ) AS period,
+            COALESCE(SUM(bet_amount), 0) AS cost,
+            COALESCE(SUM(CASE WHEN win_status = 'WIN' THEN win_amount ELSE 0 END), 0) AS win
+        FROM t_draw_ticket
+        WHERE user_id = #{userId}
+          AND deleted = 0
+          <if test="modeId != null">
+              AND mode_id = #{modeId}
+          </if>
+          <if test="startDate != null">
+              AND DATE(COALESCE(draw_time, bet_time)) &gt;= #{startDate}
+          </if>
+          <if test="endDate != null">
+              AND DATE(COALESCE(draw_time, bet_time)) &lt;= #{endDate}
+          </if>
+        GROUP BY period
+        ORDER BY period ASC
+    </select>
+
+    <!--
+        各彩票模式消费占比查询
+        时间过滤：按 COALESCE(draw_time, bet_time)
+        返回：modeId、totalCost（该模式总消费）
+    -->
+    <select id="getModeDistribution" resultType="java.util.Map">
+        SELECT
+            mode_id                        AS modeId,
+            COALESCE(SUM(bet_amount), 0)   AS totalCost
+        FROM t_draw_ticket
+        WHERE user_id = #{userId}
+          AND deleted = 0
+          <if test="startDate != null">
+              AND DATE(COALESCE(draw_time, bet_time)) &gt;= #{startDate}
+          </if>
+          <if test="endDate != null">
+              AND DATE(COALESCE(draw_time, bet_time)) &lt;= #{endDate}
+          </if>
+        GROUP BY mode_id
+        ORDER BY totalCost DESC
+    </select>
+
+</mapper>

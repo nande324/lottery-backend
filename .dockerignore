@@ -1,0 +1,13 @@
+target/
+apache-maven-3.9.6/
+maven.zip
+maven-wrapper.zip
+temp_extract/
+.idea/
+*.iml
+.git/
+mvnw
+mvnw.cmd
+mvnwDebug
+mvnwDebug.cmd
+.mvn/
