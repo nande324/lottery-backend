@@ -147,6 +147,22 @@ CREATE TABLE `t_official_draw_result` (
     INDEX `idx_draw_date` (`draw_date`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='官方历史开奖结果表（公共，从外部接口同步）';
 
+-- 默认号码表
+DROP TABLE IF EXISTS `t_default_number`;
+CREATE TABLE `t_default_number` (
+    `id`            BIGINT         NOT NULL AUTO_INCREMENT COMMENT '主键',
+    `mode_id`       BIGINT         NOT NULL COMMENT '彩票模式ID（关联 t_lottery_mode）',
+    `name`          VARCHAR(50)    NOT NULL COMMENT '默认号码名称（如：生日号、幸运数字）',
+    `red_numbers`   VARCHAR(50)    NOT NULL COMMENT '红球号码（逗号分隔，有序）',
+    `blue_numbers`  VARCHAR(20)    NULL COMMENT '蓝球号码（逗号分隔）',
+    `sort_order`    INT            NOT NULL DEFAULT 0 COMMENT '排序权重',
+    `created_time`  DATETIME       NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+    `updated_time`  DATETIME       NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+    `deleted`       TINYINT(1)     NOT NULL DEFAULT 0 COMMENT '逻辑删除标志：0未删除 1已删除',
+    PRIMARY KEY (`id`),
+    INDEX `idx_mode_id` (`mode_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='默认号码表（用户预设投注号码）';
+
 -- 登录日志表
 DROP TABLE IF EXISTS `t_login_log`;
 CREATE TABLE `t_login_log` (
